@@ -9,10 +9,13 @@ import {
   ScrollView,
   KeyboardAvoidingView,
   Platform,
+  useWindowDimensions,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors } from '../styles/colors';
 import { validateProductForm } from '../utils/validation';
 import { Product, ProductFormData, ValidationErrors } from '../types/Product';
+import { getResponsiveFontSize, isTablet, isLandscape } from '../utils/responsive';
 
 interface ProductModalProps {
   visible: boolean;
@@ -21,6 +24,8 @@ interface ProductModalProps {
 }
 
 const ProductModal: React.FC<ProductModalProps> = ({ visible, onClose, onSubmit }) => {
+  const { width, height } = useWindowDimensions();
+  const insets = useSafeAreaInsets();
   const [formData, setFormData] = useState<ProductFormData>({
     name: '',
     price: '',
@@ -28,6 +33,10 @@ const ProductModal: React.FC<ProductModalProps> = ({ visible, onClose, onSubmit 
     description: '',
   });
   const [errors, setErrors] = useState<ValidationErrors>({});
+
+  const isTabletDevice = isTablet(width);
+  const isLandscapeMode = isLandscape(width, height);
+  const inputWidth = isLandscapeMode && isTabletDevice ? '48%' : '100%';
 
   const handleInputChange = (field: keyof ProductFormData, value: string): void => {
     setFormData({ ...formData, [field]: value });
@@ -49,8 +58,6 @@ const ProductModal: React.FC<ProductModalProps> = ({ visible, onClose, onSubmit 
       };
       
       onSubmit(newProduct);
-      
-      // Reset form
       setFormData({ name: '', price: '', imageUrl: '', description: '' });
       setErrors({});
     } else {
@@ -75,80 +82,109 @@ const ProductModal: React.FC<ProductModalProps> = ({ visible, onClose, onSubmit 
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.modalOverlay}
       >
-        <View style={styles.modalContainer}>
+        <View style={[
+          styles.modalContainer,
+          { 
+            paddingTop: insets.top,
+            maxHeight: height - insets.top - insets.bottom
+          }
+        ]}>
           <View style={styles.modalHeader}>
-            <Text style={styles.modalTitle}>Tambah Produk Baru</Text>
+            <Text style={[styles.modalTitle, { fontSize: getResponsiveFontSize(20) }]}>
+              Tambah Produk Baru
+            </Text>
             <TouchableOpacity onPress={handleClose} style={styles.closeButton}>
               <Text style={styles.closeButtonText}>✕</Text>
             </TouchableOpacity>
           </View>
 
-          <ScrollView style={styles.modalContent} showsVerticalScrollIndicator={false}>
-            {/* Nama Produk */}
-            <View style={styles.inputGroup}>
-              <Text style={styles.label}>
-                Nama Produk <Text style={styles.required}>*</Text>
-              </Text>
-              <TextInput
-                style={[styles.input, errors.name && styles.inputError]}
-                placeholder="Contoh: iPhone 15 Pro Max"
-                value={formData.name}
-                onChangeText={(value) => handleInputChange('name', value)}
-              />
-              {errors.name && (
-                <Text style={styles.errorText}>⚠️ {errors.name}</Text>
-              )}
-            </View>
+          <ScrollView 
+            style={styles.modalContent} 
+            contentContainerStyle={{ paddingBottom: insets.bottom + 20 }}
+            showsVerticalScrollIndicator={false}
+          >
+            <View style={[
+              styles.formContainer,
+              {
+                flexDirection: isLandscapeMode && isTabletDevice ? 'row' : 'column',
+                flexWrap: 'wrap',
+                justifyContent: 'space-between'
+              }
+            ]}>
+              {/* Nama Produk */}
+              <View style={[styles.inputGroup, { width: inputWidth }]}>
+                <Text style={[styles.label, { fontSize: getResponsiveFontSize(14) }]}>
+                  Nama Produk <Text style={styles.required}>*</Text>
+                </Text>
+                <TextInput
+                  style={[styles.input, errors.name && styles.inputError]}
+                  placeholder="Contoh: iPhone 15 Pro Max"
+                  value={formData.name}
+                  onChangeText={(value) => handleInputChange('name', value)}
+                />
+                {errors.name && (
+                  <Text style={[styles.errorText, { fontSize: getResponsiveFontSize(13) }]}>
+                    ⚠️ {errors.name}
+                  </Text>
+                )}
+              </View>
 
-            {/* Harga */}
-            <View style={styles.inputGroup}>
-              <Text style={styles.label}>
-                Harga (Rp) <Text style={styles.required}>*</Text>
-              </Text>
-              <TextInput
-                style={[styles.input, errors.price && styles.inputError]}
-                placeholder="Contoh: 15000000"
-                value={formData.price}
-                onChangeText={(value) => handleInputChange('price', value)}
-                keyboardType="numeric"
-              />
-              {errors.price && (
-                <Text style={styles.errorText}>⚠️ {errors.price}</Text>
-              )}
-            </View>
+              {/* Harga */}
+              <View style={[styles.inputGroup, { width: inputWidth }]}>
+                <Text style={[styles.label, { fontSize: getResponsiveFontSize(14) }]}>
+                  Harga (Rp) <Text style={styles.required}>*</Text>
+                </Text>
+                <TextInput
+                  style={[styles.input, errors.price && styles.inputError]}
+                  placeholder="Contoh: 15000000"
+                  value={formData.price}
+                  onChangeText={(value) => handleInputChange('price', value)}
+                  keyboardType="numeric"
+                />
+                {errors.price && (
+                  <Text style={[styles.errorText, { fontSize: getResponsiveFontSize(13) }]}>
+                    ⚠️ {errors.price}
+                  </Text>
+                )}
+              </View>
 
-            {/* URL Gambar */}
-            <View style={styles.inputGroup}>
-              <Text style={styles.label}>
-                URL Gambar <Text style={styles.required}>*</Text>
-              </Text>
-              <TextInput
-                style={[styles.input, errors.imageUrl && styles.inputError]}
-                placeholder="https://example.com/image.jpg"
-                value={formData.imageUrl}
-                onChangeText={(value) => handleInputChange('imageUrl', value)}
-                autoCapitalize="none"
-              />
-              {errors.imageUrl && (
-                <Text style={styles.errorText}>⚠️ {errors.imageUrl}</Text>
-              )}
-              <Text style={styles.hint}>
-                💡 Tips: Gunakan URL gambar dari Unsplash atau sumber online lainnya
-              </Text>
-            </View>
+              {/* URL Gambar */}
+              <View style={[styles.inputGroup, { width: '100%' }]}>
+                <Text style={[styles.label, { fontSize: getResponsiveFontSize(14) }]}>
+                  URL Gambar <Text style={styles.required}>*</Text>
+                </Text>
+                <TextInput
+                  style={[styles.input, errors.imageUrl && styles.inputError]}
+                  placeholder="https://example.com/image.jpg"
+                  value={formData.imageUrl}
+                  onChangeText={(value) => handleInputChange('imageUrl', value)}
+                  autoCapitalize="none"
+                />
+                {errors.imageUrl && (
+                  <Text style={[styles.errorText, { fontSize: getResponsiveFontSize(13) }]}>
+                    ⚠️ {errors.imageUrl}
+                  </Text>
+                )}
+                <Text style={[styles.hint, { fontSize: getResponsiveFontSize(12) }]}>
+                  💡 Tips: Gunakan URL gambar dari Unsplash atau sumber online lainnya
+                </Text>
+              </View>
 
-            {/* Deskripsi */}
-            <View style={styles.inputGroup}>
-              <Text style={styles.label}>Deskripsi (Opsional)</Text>
-              <TextInput
-                style={[styles.input, styles.textArea]}
-                placeholder="Deskripsikan produk Anda..."
-                value={formData.description}
-                onChangeText={(value) => handleInputChange('description', value)}
-                multiline
-                numberOfLines={4}
-                textAlignVertical="top"
-              />
+              {/* Deskripsi */}
+              <View style={[styles.inputGroup, { width: '100%' }]}>
+                <Text style={[styles.label, { fontSize: getResponsiveFontSize(14) }]}>
+                  Deskripsi (Opsional)
+                </Text>
+                <TextInput
+                  style={[styles.input, styles.textArea]}
+                  placeholder="Deskripsikan produk Anda..."
+                  value={formData.description}
+                  onChangeText={(value) => handleInputChange('description', value)}
+                  multiline
+                  numberOfLines={4}
+                  textAlignVertical="top"
+                />
+              </View>
             </View>
 
             {/* Buttons */}
@@ -157,13 +193,17 @@ const ProductModal: React.FC<ProductModalProps> = ({ visible, onClose, onSubmit 
                 style={[styles.button, styles.cancelButton]}
                 onPress={handleClose}
               >
-                <Text style={styles.cancelButtonText}>Batal</Text>
+                <Text style={[styles.cancelButtonText, { fontSize: getResponsiveFontSize(15) }]}>
+                  Batal
+                </Text>
               </TouchableOpacity>
               <TouchableOpacity
                 style={[styles.button, styles.submitButton]}
                 onPress={handleSubmit}
               >
-                <Text style={styles.submitButtonText}>Tambah Produk</Text>
+                <Text style={[styles.submitButtonText, { fontSize: getResponsiveFontSize(15) }]}>
+                  Tambah Produk
+                </Text>
               </TouchableOpacity>
             </View>
           </ScrollView>
@@ -183,7 +223,6 @@ const styles = StyleSheet.create({
     backgroundColor: colors.white,
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
-    maxHeight: '90%',
   },
   modalHeader: {
     flexDirection: 'row',
@@ -195,7 +234,6 @@ const styles = StyleSheet.create({
     borderTopRightRadius: 24,
   },
   modalTitle: {
-    fontSize: 20,
     fontWeight: 'bold',
     color: colors.white,
   },
@@ -215,11 +253,13 @@ const styles = StyleSheet.create({
   modalContent: {
     padding: 20,
   },
+  formContainer: {
+    marginBottom: 10,
+  },
   inputGroup: {
-    marginBottom: 20,
+    marginBottom: 16,
   },
   label: {
-    fontSize: 14,
     fontWeight: '600',
     color: colors.gray700,
     marginBottom: 8,
@@ -228,6 +268,7 @@ const styles = StyleSheet.create({
     color: colors.error,
   },
   input: {
+    backgroundColor: colors.white,
     borderWidth: 2,
     borderColor: colors.gray300,
     borderRadius: 12,
@@ -244,19 +285,16 @@ const styles = StyleSheet.create({
   },
   errorText: {
     color: colors.error,
-    fontSize: 13,
     marginTop: 6,
   },
   hint: {
     color: colors.gray500,
-    fontSize: 12,
     marginTop: 6,
   },
   buttonGroup: {
     flexDirection: 'row',
     gap: 12,
     marginTop: 10,
-    marginBottom: 20,
   },
   button: {
     flex: 1,
@@ -269,7 +307,6 @@ const styles = StyleSheet.create({
   },
   cancelButtonText: {
     color: colors.gray700,
-    fontSize: 15,
     fontWeight: '600',
   },
   submitButton: {
@@ -277,7 +314,6 @@ const styles = StyleSheet.create({
   },
   submitButtonText: {
     color: colors.white,
-    fontSize: 15,
     fontWeight: 'bold',
   },
 });

@@ -1,6 +1,8 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, useWindowDimensions } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors } from '../styles/colors';
+import { getResponsiveFontSize, isTablet } from '../utils/responsive';
 
 interface HeaderProps {
   onAddPress: () => void;
@@ -8,20 +10,30 @@ interface HeaderProps {
 }
 
 const Header: React.FC<HeaderProps> = ({ onAddPress, productCount }) => {
+  const { width } = useWindowDimensions();
+  const insets = useSafeAreaInsets();
+  const isTabletDevice = isTablet(width);
+
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { paddingTop: insets.top + 16 }]}>
       <View style={styles.leftSection}>
         <View style={styles.iconContainer}>
           <Text style={styles.iconText}>🛒</Text>
         </View>
         <View style={styles.textContainer}>
-          <Text style={styles.title}>Mini E-Commerce</Text>
-          <Text style={styles.subtitle}>Belanja mudah, harga terjangkau</Text>
+          <Text style={[styles.title, { fontSize: getResponsiveFontSize(isTabletDevice ? 22 : 18) }]}>
+            Mini E-Commerce
+          </Text>
+          <Text style={[styles.subtitle, { fontSize: getResponsiveFontSize(11) }]}>
+            Belanja mudah, harga terjangkau
+          </Text>
         </View>
       </View>
       
       <TouchableOpacity style={styles.addButton} onPress={onAddPress}>
-        <Text style={styles.addButtonText}>+ Tambah</Text>
+        <Text style={[styles.addButtonText, { fontSize: getResponsiveFontSize(13) }]}>
+          {isTabletDevice ? '+ Tambah Produk' : '+ Tambah'}
+        </Text>
       </TouchableOpacity>
     </View>
   );
@@ -34,8 +46,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: 20,
-    paddingVertical: 20,
-    paddingTop: 37,
+    paddingBottom: 20,
     shadowColor: colors.black,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
@@ -65,13 +76,11 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   title: {
-    fontSize: 18,
     fontWeight: 'bold',
     color: colors.primary,
     marginBottom: 4,
   },
   subtitle: {
-    fontSize: 11,
     color: colors.gray600,
     lineHeight: 16,
   },
@@ -84,12 +93,11 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 8,
-    elevation: 7,
+    elevation: 6,
   },
   addButtonText: {
     color: colors.white,
     fontWeight: 'bold',
-    fontSize: 13,
   },
 });
 
